@@ -225,7 +225,31 @@ class FlatlandEnv(gym.Env):
                 info['time_safe_dist'] = self._safe_dist_counter * self._action_frequency
                 info['time'] = self._steps_curr_episode * self._action_frequency
         return merged_obs, reward, done, info
+    
+    def check_if_done(self, reward_info):
+        """
+        done_reasons:   0   -   exceeded max steps
+                        1   -   collision with obstacle
+                        2   -   goal reached
+        """
+        done = reward_info['is_done']
 
+        # info
+        info = {}
+        if done:
+            info['done_reason'] = reward_info['done_reason']
+            info['is_success'] = reward_info['is_success']
+        #else:
+        #    if self._steps_curr_episode == self._max_steps_per_episode:
+        #        done = True
+        #        info['done_reason'] = 0
+        if self._steps_curr_episode > self._max_steps_per_episode:
+            done = True
+            info['done_reason'] = 0
+            info['is_success'] = 0
+        
+        return done, info
+    
     def reset(self):
 
         # set task

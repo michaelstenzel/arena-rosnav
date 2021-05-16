@@ -155,6 +155,7 @@ class StagedRandomTask(RandomTask):
         self._initiate_stage()
 
     def next_stage(self, msg: Bool):
+        print(self._stages)
         if self._curr_stage < len(self._stages):
             self._curr_stage = self._curr_stage + 1
             self._initiate_stage()
@@ -169,6 +170,7 @@ class StagedRandomTask(RandomTask):
         else:
             print(
                 f"({self.ns}) INFO: Tried to trigger next stage but already reached last one")
+            raise StopReset("All stages have been evaluated!")
 
     def previous_stage(self, msg: Bool):
         if self._curr_stage > 1:
@@ -240,7 +242,7 @@ class ScenerioTask(ABSTask):
         assert json_path.is_file() and json_path.suffix == ".json"
         json_data = json.load(json_path.open())
         
-        self._scenerios_data = json_data["scenarios"]
+        self._scenerios_data = json_data["scenerios"]  #TODO had to temporarily revert to scenerios to restore compatibility with Magda's scenarios
         # current index of the scenerio
         self._idx_curr_scene = -1
         # The times of current scenerio repeated

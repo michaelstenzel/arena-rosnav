@@ -52,8 +52,14 @@ class RobotManager:
         # publish the start position of the robot
         # self._initialpose_pub = rospy.Publisher(
         #     'initialpose', PoseWithCovarianceStamped, queue_size=1)
+        #TODO this is the default:
+        #self._goal_pub = rospy.Publisher(
+        #    '/goal', PoseStamped, queue_size=1, latch=True)
+        #TODO add switch to select the correct topic
         self._goal_pub = rospy.Publisher(
-            f'{self.ns_prefix}goal', PoseStamped, queue_size=1, latch=True)
+            '/move_base_simple/goal', PoseStamped, queue_size=1, latch=True)
+        #self._goal_pub = rospy.Publisher(
+        #    f'{self.ns_prefix}goal', PoseStamped, queue_size=1, latch=True)
 
         self.update_map(map_)
         self._spawn_robot(robot_yaml_path)

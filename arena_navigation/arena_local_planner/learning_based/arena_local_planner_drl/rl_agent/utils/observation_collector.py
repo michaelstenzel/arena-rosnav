@@ -66,6 +66,7 @@ class ObservationCollector():
         self._robot_vel = Twist()
         self._subgoal = Pose2D()
         self._globalplan = np.array([])
+        self._cmd_vel = Twist()
 
         # train mode?
         self._is_train_mode = rospy.get_param("/train_mode")
@@ -77,6 +78,7 @@ class ObservationCollector():
 
         self._laser_deque = deque()
         self._rs_deque = deque()
+        self._cmd_vel_deque = deque()
 
         # subscriptions
         self._scan_sub = rospy.Subscriber(
@@ -85,11 +87,18 @@ class ObservationCollector():
         self._robot_state_sub = rospy.Subscriber(
             f'{self.ns_prefix}odom', Odometry, self.callback_robot_state, tcp_nodelay=True)
         
+        # command velocity subscriber
+        #self._cmd_vel_sub = message_filters.Subscriber('cmd_vel', Twist)
+        self._cmd_vel_sub = rospy.Subscriber(
+            f'{self.ns_prefix}cmd_vel', Twist, self.callback_cmd_vel, tcp_nodelay=True)
+        
         # self._clock_sub = rospy.Subscriber(
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
        
+        #self._subgoal_sub = rospy.Subscriber(
+        #    f'{self.ns_prefix}subgoal', PoseStamped, self.callback_subgoal)
         self._subgoal_sub = rospy.Subscriber(
-            f'{self.ns_prefix}subgoal', PoseStamped, self.callback_subgoal)
+            f'{self.ns_prefix}move_base_simple/goal', PoseStamped, self.callback_subgoal)  #TODO this is only for recording from MPC - add a switch to select this e.g. 'imitation' mode
 
         self._globalplan_sub = rospy.Subscriber(
             f'{self.ns_prefix}globalPlan', Path, self.callback_global_plan)
@@ -141,6 +150,16 @@ class ObservationCollector():
         self._laser_deque.clear()
         self._rs_deque.clear()
         return merged_obs, obs_dict
+    
+    def get_observations_and_action(self):
+        # Get synchronized observations and return them along with the current command velocity (action).
+        # Since get_observations() is the only function called in record_rollouts.py that calls the step_world service,
+        # the cmd_vel (action) will still be synchronized with the observations  #TODO this was true when ApproximateTimeSynchronizer was used...
+        merged_obs, obs_dict = self.get_observations()
+        #action = self._cmd_vel
+        cmd_vel_msg = self._cmd_vel_deque.popleft()  #TODO move this into synched observations...
+        action = self.process_cmd_vel_msg(cmd_vel_msg)
+        return merged_obs, obs_dict, action
 
     @staticmethod
     def _get_goal_pose_in_robot_frame(goal_pos: Pose2D, robot_pos: Pose2D):
@@ -226,6 +245,11 @@ class ObservationCollector():
         if len(self._rs_deque) == self.max_deque_size:
             self._rs_deque.popleft()
         self._rs_deque.append(msg_robotstate)
+    
+    def callback_cmd_vel(self, msg_cmd_vel):
+        if len(self._cmd_vel_deque) == self.max_deque_size:
+            self._cmd_vel_deque.popleft()
+        self._cmd_vel_deque.append(msg_cmd_vel)
 
     def callback_observation_received(self, msg_LaserScan, msg_RobotStateStamped):
         # process sensor msg
@@ -246,6 +270,11 @@ class ObservationCollector():
         pose3d = msg_Odometry.pose.pose
         twist = msg_Odometry.twist.twist
         return self.pose3D_to_pose2D(pose3d), twist
+    
+    def process_cmd_vel_msg(self, msg_cmd_vel):
+        # action.linear.x and action.angular.z are the only non-zero values and are python floats.
+        action = np.array([msg_cmd_vel.linear.x, msg_cmd_vel.angular.z])
+        return action
 
     def process_pose_msg(self, msg_PoseWithCovarianceStamped):
         # remove Covariance
