@@ -2,6 +2,7 @@ import os
 import rospy
 import rospkg
 from datetime import datetime
+import time
 
 import torch as th
 import torch.nn as nn
@@ -16,52 +17,12 @@ from dataset import EpisodeDataset, MapDataset
 
 from tensorboardX import SummaryWriter
 
-# set default hyperparameters
-
-#def pretrain(network, map_dataset, batch_size, optimizer):
-#    # the map data_set is a list of EpisodeDatasets
-#    # each EpisodeDatasets is a list of tuples: (observations, actions)
-#
-#    loss_fn = nn.MSELoss() # use mean-squared error loss for regression
-#    
-#    def train():
-#        network.train()
-#        # train and test sets should come from the same episode/path!
-#        # iterate over the episodes in the map dataset
-#        for episode in map_dataset:
-#            # do 70% train, 30% test split for the episode  #TODO is there a scikitlearn function for this?
-#            training_set_size = int(0.7*len(episode))
-#            test_set_size = len(episode) - training_set_size
-#
-#            training_set, test_set = random_split(episode, [training_set_size, test_set_size])
-#
-#            train_loader = th.utils.data.DataLoader(dataset=training_set, batch_size=batch_size, shuffle=True)  #TODO how do these work under the hood?
-#            test_loader = th.utils.data.DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True)  #TODO this goes in the test() function
-#
-#            # iterate over the timesteps of the episode:
-#            for batch, (observation, action) in enumerate(train_loader):
-#                optimizer.zero_grad()
-#                action_network = network(observation)  # run forward pass  #TODO check number of outputs
-#                loss = loss_fn(action_network, action)  # compute loss
-#                loss.backward()  # backpropagate loss
-#                optimizer.step()  # adjust network parameters using the losses  #TODO check this
-#
-#    # initialize optimizer
-#    # initialized learning rate scheduler
-#
-#    # call train() and test() repeatedly
-#    # see ClipAssist training script
-#    
-#    # return trained network
-#    pass
 
 def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learning_rate=1.0):
     # the map data_set is a list of EpisodeDatasets
     # each EpisodeDatasets is a list of tuples: (observations, actions)
 
-    #TODO see ClipAssist training script
     #TODO add random seed for reproducibility?
-    #TODO add TensorBoard logger!
     #TODO add early stopping to reduce risk of overfitting - if tensorboard logs show test loss increasing while training loss decreases
     #TODO experiment with the following hyperparameters:
     # 1. batch_size (how small should the batch size be given that the training sets are 50-200 samples?)
@@ -114,6 +75,7 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
                 running_training_loss += loss.item()  # keep running tally of training loss over the last 1000 iterations
                 if training_step_counter % 1000 == 999:  # every 1000 iterations, log training loss
                     writer.add_scalar('running training loss', running_training_loss/1000, training_step_counter)
+                    print(f"epoch {epoch}/{num_epochs} | running training loss: {running_training_loss/1000}")
                     running_training_loss = 0
                 training_step_counter += 1
             #average_train_loss = train_loss / len(training_set)
@@ -129,6 +91,7 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
                     
                     if test_step_counter % 1000 == 999:
                         writer.add_scalar('running test loss', running_test_loss/1000, test_step_counter)
+                        print(f"epoch {epoch}/{num_epochs} | running test loss: {running_test_loss/1000}")
                         running_test_loss = 0
                     test_step_counter += 1
                 #average_loss = loss / len(test_set)
@@ -146,16 +109,6 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
     writer.close()
     return agent
 
-def run_agent(env, model, steps=500):
-    obs = env.reset()
-
-    for step in range(steps):
-        action, _ = model.predict(obs, deterministic=True)
-        obs, rewards, done, info = env.step(action)
-        if done:
-            obs = env.reset()
-
-        #time.sleep(0.1)
 
 if __name__ == '__main__':  
     # create map dataset(s)
@@ -171,7 +124,8 @@ if __name__ == '__main__':
                                "scenerios_json_path": scenario,
                                "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
                                reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=100,
-                               safe_dist=None, curr_stage=1
+                               safe_dist=None, curr_stage=1,
+                               move_base_simple=True
                   )
 
     # create map datasets
@@ -183,7 +137,7 @@ if __name__ == '__main__':
     ppo_agent.save(f'baseline_ppo_agent_{date_str}')  # save untrained agent to use as a baseline
 
     #call pretrain() function
-    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=500)
+    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=1000)
     print("trained agent!")
     #TODO return value: model. save as pth file for evaluation, running OR save the ppo agent as done above
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
