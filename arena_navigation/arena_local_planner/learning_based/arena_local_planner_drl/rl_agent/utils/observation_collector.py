@@ -35,7 +35,7 @@ from std_msgs.msg import Bool
 from rl_agent.utils.debug import timeit 
 
 class ObservationCollector():
-    def __init__(self, ns: str, num_lidar_beams: int, lidar_range: float):
+    def __init__(self, ns: str, num_lidar_beams: int, lidar_range: float, move_base_simple=False):
         """ a class to collect and merge observations
 
         Args:
@@ -94,11 +94,13 @@ class ObservationCollector():
         
         # self._clock_sub = rospy.Subscriber(
         #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
-       
-        #self._subgoal_sub = rospy.Subscriber(
-        #    f'{self.ns_prefix}subgoal', PoseStamped, self.callback_subgoal)
-        self._subgoal_sub = rospy.Subscriber(
-            f'{self.ns_prefix}move_base_simple/goal', PoseStamped, self.callback_subgoal)  #TODO this is only for recording from MPC - add a switch to select this e.g. 'imitation' mode
+
+        if move_base_simple:
+            self._subgoal_sub = rospy.Subscriber(
+                f'{self.ns_prefix}move_base_simple/goal', PoseStamped, self.callback_subgoal)  #this is used when recording demonstrations from MPC
+        else:
+            self._subgoal_sub = rospy.Subscriber(
+                f'{self.ns_prefix}subgoal', PoseStamped, self.callback_subgoal)
 
         self._globalplan_sub = rospy.Subscriber(
             f'{self.ns_prefix}globalPlan', Path, self.callback_global_plan)
@@ -157,7 +159,8 @@ class ObservationCollector():
         # the cmd_vel (action) will still be synchronized with the observations  #TODO this was true when ApproximateTimeSynchronizer was used...
         merged_obs, obs_dict = self.get_observations()
         #action = self._cmd_vel
-        cmd_vel_msg = self._cmd_vel_deque.popleft()  #TODO move this into synched observations...
+        #cmd_vel_msg = self._cmd_vel_deque.popleft()  #TODO move this into synched observations...
+        cmd_vel_msg = self._cmd_vel  #TODO only for debugging purposes - need to synchronize with odom (robot state) and laser scan
         action = self.process_cmd_vel_msg(cmd_vel_msg)
         return merged_obs, obs_dict, action
 
@@ -250,6 +253,7 @@ class ObservationCollector():
         if len(self._cmd_vel_deque) == self.max_deque_size:
             self._cmd_vel_deque.popleft()
         self._cmd_vel_deque.append(msg_cmd_vel)
+        self._cmd_vel = msg_cmd_vel  #TODO only temporarily for debugging purposes
 
     def callback_observation_received(self, msg_LaserScan, msg_RobotStateStamped):
         # process sensor msg
