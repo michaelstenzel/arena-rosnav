@@ -382,7 +382,7 @@ class ScenerioTask(ABSTask):
         json.dump(json_data, dst_json_path_.open('w'), indent=4)
 
 
-def get_predefined_task(ns: str, mode="random", start_stage: int = 1, PATHS: dict = None):
+def get_predefined_task(ns: str, mode="random", start_stage: int = 1, PATHS: dict = None, move_base_simple=False):
 
     # TODO extend get_predefined_task(mode="string") such that user can choose between task, if mode is
 
@@ -402,7 +402,7 @@ def get_predefined_task(ns: str, mode="random", start_stage: int = 1, PATHS: dic
     
     # robot's yaml file is needed to get its radius.
     robot_manager = RobotManager(ns, map_response.map, os.path.join(
-        models_folder_path, 'robot', "myrobot.model.yaml"))
+        models_folder_path, 'robot', "myrobot.model.yaml"), move_base_simple=move_base_simple)
     
     obstacles_manager = ObstaclesManager(ns, map_response.map)
     
