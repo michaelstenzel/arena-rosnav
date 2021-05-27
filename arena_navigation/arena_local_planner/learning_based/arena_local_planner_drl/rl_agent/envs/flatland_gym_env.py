@@ -37,6 +37,7 @@ class FlatlandEnv(gym.Env):
                  task_mode: str = "staged",
                  PATHS: dict = dict(),
                  extended_eval: bool = False,
+                 move_base_simple=False,
                  *args, **kwargs):
         """Default env
         Flatland yaml node check the entries in the yaml file, therefore other robot related parameters cound only be saved in an other file.
@@ -85,7 +86,7 @@ class FlatlandEnv(gym.Env):
         
         # observation collector
         self.observation_collector = ObservationCollector(
-            self.ns, self._laser_num_beams, self._laser_max_range)
+            self.ns, self._laser_num_beams, self._laser_max_range, move_base_simple=move_base_simple)
         self.observation_space = self.observation_collector.get_observation_space()
 
         # reward calculator
@@ -110,7 +111,7 @@ class FlatlandEnv(gym.Env):
         
         # instantiate task manager
         self.task = get_predefined_task(
-            ns, mode=task_mode, start_stage=kwargs['curr_stage'], PATHS=PATHS)
+            ns, mode=task_mode, start_stage=kwargs['curr_stage'], PATHS=PATHS, move_base_simple=move_base_simple)
 
         self._steps_curr_episode = 0
         self._max_steps_per_episode = max_steps_per_episode
