@@ -21,7 +21,7 @@ class RobotManager:
     is managed
     """
 
-    def __init__(self, ns: str, map_: OccupancyGrid, robot_yaml_path: str, timeout=20):
+    def __init__(self, ns: str, map_: OccupancyGrid, robot_yaml_path: str, timeout=20, move_base_simple=False):
         """[summary]
 
         Args:
@@ -52,14 +52,12 @@ class RobotManager:
         # publish the start position of the robot
         # self._initialpose_pub = rospy.Publisher(
         #     'initialpose', PoseWithCovarianceStamped, queue_size=1)
-        #TODO this is the default:
-        #self._goal_pub = rospy.Publisher(
-        #    '/goal', PoseStamped, queue_size=1, latch=True)
-        #TODO add switch to select the correct topic
-        self._goal_pub = rospy.Publisher(
-            '/move_base_simple/goal', PoseStamped, queue_size=1, latch=True)
-        #self._goal_pub = rospy.Publisher(
-        #    f'{self.ns_prefix}goal', PoseStamped, queue_size=1, latch=True)
+        if move_base_simple:
+            self._goal_pub = rospy.Publisher(
+                '/move_base_simple/goal', PoseStamped, queue_size=1, latch=True)  # record_rollouts requires move_base_simple/goal
+        else:
+            self._goal_pub = rospy.Publisher(
+                f'{self.ns_prefix}goal', PoseStamped, queue_size=1, latch=True)
 
         self.update_map(map_)
         self._spawn_robot(robot_yaml_path)
