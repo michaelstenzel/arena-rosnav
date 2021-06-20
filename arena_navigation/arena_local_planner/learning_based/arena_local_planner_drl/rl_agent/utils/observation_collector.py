@@ -66,7 +66,11 @@ class ObservationCollector():
         self._robot_vel = Twist()
         self._subgoal = Pose2D()
         self._globalplan = np.array([])
-        self._cmd_vel = Twist()
+        #self._cmd_vel = Twist()
+
+        self._time_of_synched_rs = None
+        self._time_of_synched_scan = None
+
 
         # train mode?
         self._is_train_mode = rospy.get_param("/train_mode")
@@ -75,6 +79,7 @@ class ObservationCollector():
         self._first_sync_obs = True     # whether to return first sync'd obs or most recent
         self.max_deque_size = 10
         self._sync_slop = 0.05
+        #self._sync_cmd_vel_slop = 0.08
 
         self._laser_deque = deque()
         self._rs_deque = deque()
@@ -92,8 +97,8 @@ class ObservationCollector():
         self._cmd_vel_sub = rospy.Subscriber(
             f'{self.ns_prefix}cmd_vel', Twist, self.callback_cmd_vel, tcp_nodelay=True)
         
-        # self._clock_sub = rospy.Subscriber(
-        #     f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
+        self._clock_sub = rospy.Subscriber(
+            f'{self.ns_prefix}clock', Clock, self.callback_clock, tcp_nodelay=True)
 
         if move_base_simple:
             self._subgoal_sub = rospy.Subscriber(
@@ -155,13 +160,32 @@ class ObservationCollector():
     
     def get_observations_and_action(self):
         # Get synchronized observations and return them along with the current command velocity (action).
-        # Since get_observations() is the only function called in record_rollouts.py that calls the step_world service,
-        # the cmd_vel (action) will still be synchronized with the observations  #TODO this was true when ApproximateTimeSynchronizer was used...
         merged_obs, obs_dict = self.get_observations()
-        #action = self._cmd_vel
-        #cmd_vel_msg = self._cmd_vel_deque.popleft()  #TODO move this into synched observations...
-        cmd_vel_msg = self._cmd_vel  #TODO only for debugging purposes - need to synchronize with odom (robot state) and laser scan
-        action = self.process_cmd_vel_msg(cmd_vel_msg)
+        #print(f"get_obs_and_action | len(_cmd_vel_deque): {len(self._cmd_vel_deque)}")
+        # N.B. cmd_vel messages are published much less frequently than laser scan and robot state
+        # -> deque has at most 1 element in it, this is why only the first element in the deque is considered for synchronization
+        if len(self._cmd_vel_deque) > 0:
+            #print("_cmd_vel_deque.popleft()!")
+            cmd_vel_msg, clock_value = self._cmd_vel_deque.popleft()
+            if not isinstance(clock_value, float):
+                clock_value = clock_value.clock.to_sec()
+            
+            #print(f"clock_value - self._time_of_synched_rs   = {clock_value - self._time_of_synched_rs}")
+            #print(f"clock_value - self._time_of_synched_scan = {clock_value - self._time_of_synched_scan}")
+            if abs(clock_value - self._time_of_synched_rs) > 0.05 or abs(clock_value - self._time_of_synched_scan) > 0.05:
+                #print('-----------------------------------')
+                #print(f"cmd_vel&rs   not synced! {abs(clock_value - self._time_of_synched_rs)}")
+                #print(f"cmd_vel&scan not synced! {abs(clock_value - self._time_of_synched_scan)}")
+                action = None
+            else:
+                #print('--------------------')
+                #print('synced action found!')
+                action = self.process_cmd_vel_msg(cmd_vel_msg)
+        else:
+            action = None
+            #print("deque is empty!")
+            #print('---------------------')
+        
         return merged_obs, obs_dict, action
 
     @staticmethod
@@ -199,6 +223,9 @@ class ObservationCollector():
 
             laser_scan = self.process_scan_msg(laser_scan_msg)
             robot_pose, _ = self.process_robot_state_msg(robot_pose_msg)
+
+            self._time_of_synched_rs = robot_stamp
+            self._time_of_synched_scan = laser_stamp
 
             if self._first_sync_obs:
                 break
@@ -250,10 +277,11 @@ class ObservationCollector():
         self._rs_deque.append(msg_robotstate)
     
     def callback_cmd_vel(self, msg_cmd_vel):
+        time_received = self._clock
         if len(self._cmd_vel_deque) == self.max_deque_size:
             self._cmd_vel_deque.popleft()
-        self._cmd_vel_deque.append(msg_cmd_vel)
-        self._cmd_vel = msg_cmd_vel  #TODO only temporarily for debugging purposes
+        self._cmd_vel_deque.append((msg_cmd_vel, time_received))
+        #self._cmd_vel = msg_cmd_vel  #TODO only temporarily for debugging purposes
 
     def callback_observation_received(self, msg_LaserScan, msg_RobotStateStamped):
         # process sensor msg

@@ -4,6 +4,8 @@ import rospkg
 from datetime import datetime
 import time
 
+import numpy as np
+
 import torch as th
 import torch.nn as nn
 import torch.optim as optim
@@ -18,7 +20,7 @@ from dataset import EpisodeDataset, MapDataset
 from tensorboardX import SummaryWriter
 
 
-def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learning_rate=1.0):
+def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learning_rate=0.05, oversample=False):
     # the map data_set is a list of EpisodeDatasets
     # each EpisodeDatasets is a list of tuples: (observations, actions)
 
@@ -50,6 +52,12 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
         # iterate over the episodes in the map dataset
         episode_counter = 1
         for episode in map_dataset:
+            # naive oversampling (will result in overlap of test and train set)
+            if oversample:
+                start = int(0.3*len(episode))
+                episode.actions = np.append(episode.actions, episode.actions[0:start], axis=0)
+                episode.observations = np.append(episode.observations, episode.observations[0:start], axis=0)
+                #TODO alternative: could create a dataset out of the start arrays, concatenated with test set...
             #print(f"training on episode {episode_counter}/{len(map_dataset)}")
             # do 70% train, 30% test split for the episode  #TODO is there a scikitlearn function for this?
             training_set_size = int(0.7*len(episode))
@@ -73,9 +81,9 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
                 optimizer.step()  # adjust network parameters using the losses  #TODO check this
 
                 running_training_loss += loss.item()  # keep running tally of training loss over the last 1000 iterations
-                if training_step_counter % 1000 == 999:  # every 1000 iterations, log training loss
-                    writer.add_scalar('running training loss', running_training_loss/1000, training_step_counter)
-                    print(f"epoch {epoch}/{num_epochs} | running training loss: {running_training_loss/1000}")
+                if training_step_counter % 100 == 99:  # every 1000 iterations, log training loss
+                    writer.add_scalar('running training loss', running_training_loss/100, training_step_counter)
+                    print(f"epoch {epoch}/{num_epochs} | running training loss: {running_training_loss/100}")
                     running_training_loss = 0
                 training_step_counter += 1
             #average_train_loss = train_loss / len(training_set)
@@ -89,9 +97,9 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
                     action_network = action_network.double()
                     running_test_loss += loss_fn(action_network, action).item()  #TODO check me
                     
-                    if test_step_counter % 1000 == 999:
-                        writer.add_scalar('running test loss', running_test_loss/1000, test_step_counter)
-                        print(f"epoch {epoch}/{num_epochs} | running test loss: {running_test_loss/1000}")
+                    if test_step_counter % 100 == 99:
+                        writer.add_scalar('running test loss', running_test_loss/100, test_step_counter)
+                        print(f"epoch {epoch}/{num_epochs} | running test loss: {running_test_loss/100}")
                         running_test_loss = 0
                     test_step_counter += 1
                 #average_loss = loss / len(test_set)
@@ -112,7 +120,7 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
 
 if __name__ == '__main__':  
     # create map dataset(s)
-    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small/')
+    #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small/')
     scenario = '/home/michael/catkin_ws/src/arena-rosnav/gui/eval_scenarios/0_done_json_files/eval2_with_map_empty_small/07.0__2_static_2_dynamic_obs_robot_pos1.json'
     models_folder_path = rospkg.RosPack().get_path('simulator_setup')
     arena_local_planner_drl_folder_path = rospkg.RosPack().get_path('arena_local_planner_drl')
@@ -129,7 +137,8 @@ if __name__ == '__main__':
                   )
 
     # create map datasets
-    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small')
+    #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small')
+    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
 
     #TODO create PPO agent
     ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
@@ -137,7 +146,7 @@ if __name__ == '__main__':
     ppo_agent.save(f'baseline_ppo_agent_{date_str}')  # save untrained agent to use as a baseline
 
     #call pretrain() function
-    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=1000)
+    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=8, oversample=False)
     print("trained agent!")
     #TODO return value: model. save as pth file for evaluation, running OR save the ppo agent as done above
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')

@@ -29,7 +29,7 @@ def clear_costmaps():
 def save_episode(observations, actions, map_name):
     # save observations and actions in an npz file:
     date_str = datetime.now().strftime('%Y%m%d_%H-%M-%S')
-    path = str(f'./output/{map_name}/rollout_{date_str}')
+    path = str(f'./output/{map_name}_stage_3_4_dynamic_1_static/rollout_{date_str}')
     print(f'Saving episode to {path}')
     np.savez_compressed(
         path,
@@ -67,12 +67,14 @@ arena_local_planner_drl_folder_path = rospkg.RosPack().get_path(
 #                  os.path.join(arena_local_planner_drl_folder_path,
 #                               'configs', 'default_settings.yaml'), "rule_00", False,
 #                  )  #TODO must use rule_00 for the reward calculator!
+
+# set curr_stage=1 to select which stage is played during recording
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                                'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
                                "scenerios_json_path": args.scenario,
                                "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
-                               reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=100,
-                               safe_dist=None, curr_stage=1,
+                               reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=90,
+                               safe_dist=None, curr_stage=3,
                                move_base_simple=True
                   )  #TODO must use rule_00 for the reward calculator!
 
@@ -84,7 +86,12 @@ obs = env.reset()
 episode_observations = []
 episode_actions = []
 while(True):
+    #time.sleep(0.01)
     merged_obs, obs_dict, action = env.observation_collector.get_observations_and_action()
+    #if action is None:  #TODO I need to change this - still need to check whether or not the goal was reached or the robot crashed!
+        #print("Couldn't get a cmd_vel for this step!")
+    #    continue
+    #print('FOUND SYNCHED ACTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     #print(f"merged_obs: {merged_obs}")
     #print(f"action: {action}")
 
@@ -112,8 +119,9 @@ while(True):
             clear_costmaps()
             #time.sleep(2.0)
         else:
-            episode_observations.append(merged_obs)
-            episode_actions.append(action)
+            if action is not None:
+                episode_observations.append(merged_obs)
+                episode_actions.append(action)
             save_episode(episode_observations, episode_actions, args.map_name)
             episode_observations = []
             episode_actions = []
@@ -130,6 +138,7 @@ while(True):
                 break
     else:
         # if the episode is not done, save this timesteps's observations and actions to the arrays and continue the episode
-        episode_observations.append(merged_obs)
-        episode_actions.append(action)
-    #env._steps_curr_episode += 1  #TODO check me! is this the correct line for this?
+        if action is not None:
+            episode_observations.append(merged_obs)
+            episode_actions.append(action)
+    #env._steps_curr_episode += 1  # increase step count to enforce maximum number of steps per episode
