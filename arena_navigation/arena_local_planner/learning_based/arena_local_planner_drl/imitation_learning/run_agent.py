@@ -5,10 +5,8 @@ import time
 from stable_baselines3 import PPO
 
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
-from dataset import MapDataset
 
 # create map dataset(s)
-map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small/')
 models_folder_path = rospkg.RosPack().get_path('simulator_setup')
 arena_local_planner_drl_folder_path = rospkg.RosPack().get_path('arena_local_planner_drl')
 
@@ -21,9 +19,6 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
                             safe_dist=None, curr_stage=1,
                             move_base_simple=False
                 )
-
-# create map datasets
-map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small')
 
 #load PPO agent from zip
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/baseline_ppo_agent_20210526_17-26.zip', env)
