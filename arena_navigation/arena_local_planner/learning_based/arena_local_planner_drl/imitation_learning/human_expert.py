@@ -143,16 +143,15 @@ while(True):
     print(f'rho: {obs[-2]}')
     print(f'theta: {obs[-1]}')
 
-    print(f"reward: {rewards}")
-    print(f"done: {done}")
-
+    # let human expert adjust the speed and confirm when done. The new action will be stored in the global action variable.
     select_action()
 
     if done:
         print(f"done info: {info}")
         if info['done_reason'] == 1:
             # if the episode is done because the robot collided with an obstacle, ignore this episode
-            # reduce repeat count by 1 and start again
+            # reset episode lists to empty lists
+            # #reduce repeat count by 1 and start again
             print('collision')
             #task._num_repeats_curr_scene -= 1
             #env.task._num_repeats_curr_scene -= 1  #TODO check me! I think this only exists for ScenarioTasks! May not be relevant with new file structure anyway (1 file per path)
@@ -171,8 +170,9 @@ while(True):
             select_action()
         else:
             # done but not crashed - ran out of timesteps or at the goal
+            # append stopping as last action
             episode_observations.append(obs)
-            episode_actions.append(np.array(action))
+            episode_actions.append(np.array([0.0, 0.0]))
             episode_rewards.append(rewards)
             episode_dones.append(done)
             episode_infos.append(info)
