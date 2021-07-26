@@ -170,9 +170,8 @@ while(True):
             select_action()
         else:
             # done but not crashed - ran out of timesteps or at the goal
-            # append stopping as last action
             episode_observations.append(obs)
-            episode_actions.append(np.array([0.0, 0.0]))
+            episode_actions.append(np.array(action))
             episode_rewards.append(rewards)
             episode_dones.append(done)
             episode_infos.append(info)
