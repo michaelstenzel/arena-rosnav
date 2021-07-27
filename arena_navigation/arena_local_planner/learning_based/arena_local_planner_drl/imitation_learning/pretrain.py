@@ -1,4 +1,5 @@
 import os
+import argparse
 import rospy
 import rospkg
 from datetime import datetime
@@ -20,7 +21,7 @@ from dataset import MapDataset
 from tensorboardX import SummaryWriter
 
 
-def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learning_rate=1.0):
+def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learning_rate=1.0, dataset='human_expert'):
     # the map data_set is a list of EpisodeDatasets
     # each EpisodeDatasets is a list of tuples: (observations, actions)
 
@@ -32,7 +33,7 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
     # 3. step_size (learning rate scheduler)
     # 4. learning rate (optimizer)
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    writer = SummaryWriter(f'tensorboard_logs/{date_str}')
+    writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}_{num_epochs}_epochs_{batch_size}_batchsize_{learning_rate}_lr')
 
     network = agent.policy # copy network from agent
     print(f"network: {network}")
@@ -110,7 +111,15 @@ def pretrain(agent, map_dataset, num_epochs=1, batch_size=32, gamma=0.7, learnin
     return agent
 
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='.')
+    parser.add_argument('-e', '--num_epochs', type=int, help='number of training epochs', default=10)
+    parser.add_argument('-bs', '--batch_size', type=int, help='path of scenario json file for deployment', default=15)
+    parser.add_argument('-lr', '--learning_rate', type=int, help='initial learning rate', default=1.0)
+    parser.add_argument('-ds', '--dataset', type=str, help='string describing the dataset (e.g. "mpc" or "human_expert"). We be used for tensorboard logs and output agent files.', default='human_expert')
+    
+    args = parser.parse_args()
+    
     # need dummy scenario to instantiate FlatlandEnv. Need a gym env to instantiate a PPO agent.
     scenario = '/home/michael/catkin_ws/src/arena-rosnav/gui/eval_scenarios/0_done_json_files/eval2_with_map_empty_small/07.0__2_static_2_dynamic_obs_robot_pos1.json'
     models_folder_path = rospkg.RosPack().get_path('simulator_setup')
@@ -119,27 +128,31 @@ if __name__ == '__main__':
     ns = ''
 
     env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
-                               'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
+                               'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_04",
                                "scenerios_json_path": scenario,
-                               "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
-                               reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=100,
+                               "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
+                               reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=600,
                                safe_dist=None, curr_stage=1,
-                               move_base_simple=True
+                               move_base_simple=False
                   )
 
     # create map dataset
     #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small')
-    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
+    # output folder: MPC
+    #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
+
+    # human expert folder:
+    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/human_expert')
 
     # create PPO agent
     ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    ppo_agent.save(f'baseline_ppo_agent_{date_str}')  # save untrained agent to use as a baseline
+    ppo_agent.save(f'baseline_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
 
     # pretrain the PPO agent
-    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=40, batch_size=32, learning_rate=1.0)
+    trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=args.num_epochs, batch_size=args.batch_size, learning_rate=args.learning_rate, dataset=args.dataset)
     print("trained agent!")
 
     # save the pretrained PPO agent
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    trained_agent.save(f'pretrained_ppo_agent_{date_str}')
+    trained_agent.save(f'pretrained_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
