@@ -33,7 +33,7 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
     # 3. step_size (learning rate scheduler)
     # 4. learning rate (optimizer)
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}_{num_epochs}_epochs_{batch_size}_batchsize_{learning_rate}_lr')
+    writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}')
 
     network = agent.policy # copy network from agent
     print(f"network: {network}")
@@ -48,6 +48,16 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
     training_set_size = int(0.7*len(map_dataset))
     test_set_size = len(map_dataset) - training_set_size
     training_set, test_set = random_split(map_dataset, [training_set_size, test_set_size], generator=th.Generator().manual_seed(0))
+
+    #TODO use these concatenated datasets and dataloaders. Iterate over them like so:
+    #note, if shuffle=True, don't set a Sampler
+    ## for batch, (observation, action) in enumerate(train_loader):
+    #training_episode_list = [episode for episode in training_set]
+    #concat_train_set = th.utils.data.ConcatDataset(training_episode_list)
+    #train_loader = th.utils.data.DataLoader(dataset=concat_train_set, batch_size=15, shuffle=True)
+    #test_episode_list = [episode for episode in test_set]
+    #concat_test_set = th.utils.data.ConcatDataset(test_episode_list)
+    # TODO end of TODO
     
     # batch counters: count+1 for each batch loaded from the training or test set
     # used only to log the batch loss
@@ -128,9 +138,9 @@ if __name__ == '__main__':
     ns = ''
 
     env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
-                               'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_04",
+                               'configs', 'default_settings.yaml'), "model": os.path.join(arena_local_planner_drl_folder_path, 'agents', 'rule_04'),
                                "scenerios_json_path": scenario,
-                               "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
+                               "curriculum": os.path.join(arena_local_planner_drl_folder_path, "configs" , "training_curriculum_map1small.yaml")},
                                reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=600,
                                safe_dist=None, curr_stage=1,
                                move_base_simple=False
@@ -142,12 +152,12 @@ if __name__ == '__main__':
     #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
 
     # human expert folder:
-    map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/human_expert')
+    map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/human_expert')
 
     # create PPO agent
     ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    ppo_agent.save(f'baseline_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
+    ppo_agent.save(f'baseline_ppo_agent_episode-sampling_default-architecture_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
 
     # pretrain the PPO agent
     trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=args.num_epochs, batch_size=args.batch_size, learning_rate=args.learning_rate, dataset=args.dataset)
@@ -155,4 +165,4 @@ if __name__ == '__main__':
 
     # save the pretrained PPO agent
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    trained_agent.save(f'pretrained_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
+    trained_agent.save(f'pretrained_ppo_agent_episode-sampling_default-architecture_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
