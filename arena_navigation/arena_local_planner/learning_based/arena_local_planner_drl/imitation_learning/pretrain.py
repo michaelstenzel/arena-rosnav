@@ -16,6 +16,7 @@ from torch.utils.data.dataset import random_split
 from stable_baselines3 import PPO
 
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
+from arena_navigation.arena_local_planner.learning_based.arena_local_planner_drl.scripts.custom_policy import *
 from dataset import MapDataset
 
 from tensorboardX import SummaryWriter
@@ -49,15 +50,13 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
     test_set_size = len(map_dataset) - training_set_size
     training_set, test_set = random_split(map_dataset, [training_set_size, test_set_size], generator=th.Generator().manual_seed(0))
 
-    #TODO use these concatenated datasets and dataloaders. Iterate over them like so:
-    #note, if shuffle=True, don't set a Sampler
-    ## for batch, (observation, action) in enumerate(train_loader):
-    #training_episode_list = [episode for episode in training_set]
-    #concat_train_set = th.utils.data.ConcatDataset(training_episode_list)
-    #train_loader = th.utils.data.DataLoader(dataset=concat_train_set, batch_size=15, shuffle=True)
-    #test_episode_list = [episode for episode in test_set]
-    #concat_test_set = th.utils.data.ConcatDataset(test_episode_list)
-    # TODO end of TODO
+    # initialize dataloaders to iterate over entire train and test sets. shuffle=True, so all samples are shuffled at the end of each epoch.
+    training_episode_list = [episode for episode in training_set]  # create list of all EpisodeDatasets in training_set
+    concat_train_set = th.utils.data.ConcatDataset(training_episode_list)  # concatenate episodes in the list: each element of concat_train_set is one (observation, action) pair
+    train_loader = th.utils.data.DataLoader(dataset=concat_train_set, batch_size=batch_size, shuffle=True)  # train_loader returns mini-batches of (observation, action) pairs.
+    test_episode_list = [episode for episode in test_set]
+    concat_test_set = th.utils.data.ConcatDataset(test_episode_list)
+    test_loader = th.utils.data.DataLoader(dataset=concat_test_set, batch_size=batch_size, shuffle=True)
     
     # batch counters: count+1 for each batch loaded from the training or test set
     # used only to log the batch loss
@@ -65,51 +64,39 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
     test_batch_counter = 0
     for epoch in range(num_epochs):
         # TRAINING LOOP
-        # iterate over the episodes of the training set:
         epoch_training_loss = 0  # keep running total of loss over the current epoch
         network.train()
-        for episode in training_set:
-            # instantiate dataloader for this episode
-            episode_loader = th.utils.data.DataLoader(dataset=episode, batch_size=batch_size, shuffle=True)
-            # iterate over timesteps in this episode
-            for batch, (observation, action) in enumerate(episode_loader):
-                optimizer.zero_grad()
-                action_network, _, _ = network(observation)  # run forward pass to get network's prediction  #TODO check number of outputs
-                #print(f"action_network: {action_network}")
-                action_network = action_network.double()  # MSELoss() expects inputs to be doubles
-                #print(f"action_network.double(): {action_network}")
-                loss = loss_fn(action_network, action)  # compute loss
+        for batch, (observation, action) in enumerate(train_loader):
+            optimizer.zero_grad()
+            action_network, _, _ = network(observation)  # run forward pass to get network's prediction
+            action_network = action_network.double()  # MSELoss() expects inputs to be doubles
+            loss = loss_fn(action_network, action)  # compute loss
 
-                epoch_training_loss += loss.item()
-                # log average batch loss: total loss in this batch normalized by the number of timesteps in the batch
-                writer.add_scalar('training batch loss', loss.item()/len(observation), training_batch_counter)
-                training_batch_counter += 1
+            epoch_training_loss += loss.item()
+            # log average batch loss: total loss in this batch normalized by the number of timesteps in the batch
+            writer.add_scalar('training batch loss', loss.item()/len(observation), training_batch_counter)
+            training_batch_counter += 1
 
-                loss.backward()  # backpropagate loss
-                optimizer.step()  # adjust network parameters using the losses  #TODO check this
+            loss.backward()  # backpropagate loss
+            optimizer.step()  # adjust network parameters using the losses
                 
         # average training loss for the epoch: running total of loss over the epoch divided by number of samples in training_set
         writer.add_scalar('training epoch loss', epoch_training_loss/len(training_set), epoch)
         print(f"epoch {epoch}/{num_epochs} | training epoch loss: {epoch_training_loss/len(training_set)}")
 
         # TEST LOOP
-        # iterate over the episodes of the test set to get the average test set loss
         epoch_test_loss = 0
-        network.eval()  #TODO don't update gradients? Need both eval and no_grad?
-        with th.no_grad():  # don't update gradients!
-            for episode in test_set:
-                # instantiate dataloader for this episode
-                episode_loader = th.utils.data.DataLoader(dataset=episode, batch_size=batch_size, shuffle=True)
-                # iterate over timesteps in this episode
-                for batch, (observation, action) in enumerate(episode_loader):
-                    action_network, _, _ = network(observation)
-                    action_network = action_network.double()
-                    loss = loss_fn(action_network, action)  #TODO check me
-                    
-                    epoch_test_loss += loss.item()
-                    # log average batch loss: total loss in this batch normalized by the number of timesteps in the batch
-                    writer.add_scalar('test batch loss', loss.item()/len(observation), test_batch_counter)
-                    test_batch_counter += 1
+        network.eval()
+        with th.no_grad():  # don't update gradients
+            for batch, (observation, action) in enumerate(test_loader):
+                action_network, _, _ = network(observation)
+                action_network = action_network.double()
+                loss = loss_fn(action_network, action)
+                
+                epoch_test_loss += loss.item()
+                # log average batch loss: total loss in this batch normalized by the number of timesteps in the batch
+                writer.add_scalar('test batch loss', loss.item()/len(observation), test_batch_counter)
+                test_batch_counter += 1
                     
             # average test loss for the epoch: running total of loss over the epoch divided by number of samples in test_set
             writer.add_scalar('test epoch loss', epoch_test_loss/len(test_set), epoch)
@@ -154,10 +141,17 @@ if __name__ == '__main__':
     # human expert folder:
     map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/human_expert')
 
+    # instantiate agent 18 (CNN)
+    policy_kwargs = policy_kwargs_agent_18
+    ppo_agent = PPO(
+        "CnnPolicy", env, 
+        policy_kwargs = policy_kwargs, verbose = 1
+    )
+
     # create PPO agent
-    ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
+    #ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    ppo_agent.save(f'baseline_ppo_agent_episode-sampling_default-architecture_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
+    ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
 
     # pretrain the PPO agent
     trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=args.num_epochs, batch_size=args.batch_size, learning_rate=args.learning_rate, dataset=args.dataset)
@@ -165,4 +159,4 @@ if __name__ == '__main__':
 
     # save the pretrained PPO agent
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    trained_agent.save(f'pretrained_ppo_agent_episode-sampling_default-architecture_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
+    trained_agent.save(f'pretrained_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
