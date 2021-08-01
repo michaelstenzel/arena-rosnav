@@ -31,9 +31,7 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
 
     loss_fn = nn.MSELoss() # use mean-squared error loss for regression
     # initialize optimizer
-    optimizer = optim.Adadelta(network.parameters(), lr=learning_rate)  #TODO experiment with Adadelta and Adam
-    # initialize learning rate scheduler
-    #scheduler = StepLR(optimizer, step_size=1, gamma=gamma)  #TODO experiment with optim.lr_scheduler.ReduceLROnPlateau
+    optimizer = optim.Adadelta(network.parameters(), lr=learning_rate)
 
     # do 70%/30% train/test split with a random seed for reproducibility
     training_set_size = int(0.7*len(map_dataset))
@@ -91,7 +89,6 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
             # average test loss for the epoch: running total of loss over the epoch divided by number of samples in test_set
             writer.add_scalar('test epoch loss', epoch_test_loss/len(test_set), epoch)
             print(f"epoch {epoch}/{num_epochs} | test epoch loss: {epoch_test_loss/len(test_set)}")
-        #scheduler.step()  # reduce the learning rate at the end of the episode
     
     agent.policy = network  # overwrite agent's network with the new pretrained one    
     writer.close()
