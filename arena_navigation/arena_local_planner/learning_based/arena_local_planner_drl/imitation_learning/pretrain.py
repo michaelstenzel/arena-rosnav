@@ -124,6 +124,7 @@ if __name__ == '__main__':
 
     ns = ''
 
+    #TODO passing a "scenerios_json_path" may no longer be necessary
     env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                                'configs', 'default_settings.yaml'), "model": os.path.join(arena_local_planner_drl_folder_path, 'agents', 'rule_04'),
                                "scenerios_json_path": scenario,
@@ -151,7 +152,7 @@ if __name__ == '__main__':
     # create PPO agent
     #ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')  # save untrained agent to use as a baseline
+    ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')  # save untrained agent to use as a baseline
 
     # pretrain the PPO agent
     trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=args.num_epochs, batch_size=args.batch_size, learning_rate=args.learning_rate, dataset=args.dataset)
@@ -159,4 +160,4 @@ if __name__ == '__main__':
 
     # save the pretrained PPO agent
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    trained_agent.save(f'pretrained_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize_{args.learning_rate}_lr')
+    trained_agent.save(f'pretrained_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')
