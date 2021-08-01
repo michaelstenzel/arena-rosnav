@@ -135,9 +135,7 @@ if __name__ == '__main__':
         "CnnPolicy", env, 
         policy_kwargs = policy_kwargs, verbose = 1
     )
-
-    # create PPO agent
-    #ppo_agent = PPO('MlpPolicy', env, verbose=1)
+    
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
     ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')  # save untrained agent to use as a baseline
 
