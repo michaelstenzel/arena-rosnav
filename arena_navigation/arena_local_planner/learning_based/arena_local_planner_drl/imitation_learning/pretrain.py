@@ -23,16 +23,6 @@ from tensorboardX import SummaryWriter
 
 
 def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learning_rate=1.0, dataset='human_expert'):
-    # the map data_set is a list of EpisodeDatasets
-    # each EpisodeDatasets is a list of tuples: (observations, actions)
-
-    #TODO add random seed for reproducibility?
-    #TODO add early stopping to reduce risk of overfitting - if tensorboard logs show test loss increasing while training loss decreases
-    #TODO experiment with the following hyperparameters:
-    # 1. batch_size (how small should the batch size be given that the training sets are 50-200 samples?)
-    # 2. gamma (learning rate scheduler)
-    # 3. step_size (learning rate scheduler)
-    # 4. learning rate (optimizer)
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
     writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}')
 
@@ -150,7 +140,7 @@ if __name__ == '__main__':
     )
 
     # create PPO agent
-    #ppo_agent = PPO('MlpPolicy', env, verbose=1)  #TODO verbose=1?
+    #ppo_agent = PPO('MlpPolicy', env, verbose=1)
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
     ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')  # save untrained agent to use as a baseline
 
