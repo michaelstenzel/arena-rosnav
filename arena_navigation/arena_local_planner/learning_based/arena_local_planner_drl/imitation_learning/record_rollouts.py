@@ -11,7 +11,6 @@ import rospy
 import rospkg
 import numpy as np
 from collections import OrderedDict
-import h5py
 import subprocess
 
 
@@ -73,10 +72,10 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
                                'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
                                "scenerios_json_path": args.scenario,
                                "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
-                               reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=90,
+                               reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=600,
                                safe_dist=None, curr_stage=3,
                                move_base_simple=True
-                  )  #TODO must use rule_00 for the reward calculator!
+                  )  # must set a reward_fnc for the reward calculator, it will return if the episode is done and why
 
 print(f"env: {env}")
 
@@ -88,18 +87,12 @@ episode_actions = []
 while(True):
     #time.sleep(0.01)
     merged_obs, obs_dict, action = env.observation_collector.get_observations_and_action()
-    #if action is None:  #TODO I need to change this - still need to check whether or not the goal was reached or the robot crashed!
-        #print("Couldn't get a cmd_vel for this step!")
-    #    continue
-    #print('FOUND SYNCHED ACTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    #print(f"merged_obs: {merged_obs}")
-    #print(f"action: {action}")
 
     reward, reward_info = env.reward_calculator.get_reward(
             obs_dict['laser_scan'], obs_dict['goal_in_robot_frame'])
     
     done, info = env.check_if_done(reward_info)
-    #print(f"done: {done}")
+
     if done:
         print(f"done info: {info}")
         if info['done_reason'] == 1:
