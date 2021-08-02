@@ -4,8 +4,6 @@ import time
 
 import numpy as np
 
-from stable_baselines3 import PPO
-
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
 
 import getch
@@ -20,9 +18,11 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
                             'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
                             "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
                             reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
-                            safe_dist=None, curr_stage=1,
+                            safe_dist=None, curr_stage=3,
                             move_base_simple=False
                 )
+
+INCREMENT = 0.5
 
 def print_action():
     os.system("clear")  # clear command line output
@@ -39,13 +39,13 @@ def print_action():
 
 def adjust_action(key):
     if key == "w":
-        action[0] += 0.5
+        action[0] += INCREMENT
     if key == "s":
-        action[0] -= 0.5
+        action[0] -= INCREMENT
     if key == "a":
-        action[1] += 0.5
+        action[1] += INCREMENT
     if key == "d":
-        action[1] -= 0.5
+        action[1] -= INCREMENT
     return
 
 steps = 50000
@@ -62,6 +62,7 @@ for step in range(steps):
         print_action()
     
     obs, rewards, done, info = env.step(action)
+    print(f"rewards: {rewards}")
     env._steps_curr_episode += 1
     if done:
         obs = env.reset()
