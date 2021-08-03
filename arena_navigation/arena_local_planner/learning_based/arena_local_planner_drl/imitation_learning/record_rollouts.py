@@ -1,16 +1,9 @@
 import argparse
-import time
 from datetime import datetime
 import os
-import sys
-from stable_baselines3 import A2C
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
-#from flatland_gym_env_il import FlatlandEnvIL
-from task_generator.tasks import get_predefined_task
-import rospy
 import rospkg
 import numpy as np
-from collections import OrderedDict
 import subprocess
 
 
