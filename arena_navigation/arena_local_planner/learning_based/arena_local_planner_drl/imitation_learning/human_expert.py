@@ -43,7 +43,7 @@ ns = ''
 
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('-m', '--map_name', type=str, help='name of the map being recorded on', required=True, default="map_small")
-parser.add_argument('-scenario', '--scenario', type=str, metavar="[scenario name]", default='', help='name of the scenario json file in /simulator_setup/scenarios')
+parser.add_argument('-scenario', '--scenario', type=str, metavar="[scenario name]", default='', help='name with .json of the scenario json file in /simulator_setup/scenarios')
 parser.add_argument('-stage', '--stage', type=int, metavar="[current stage]", default=1, help='stage to start the simulation with')
 args = parser.parse_args()
 
@@ -59,11 +59,11 @@ arena_local_planner_drl_folder_path = rospkg.RosPack().get_path(
 # relevant parameters:
 # task_mode (staged for random scenarios, scenario for a predefined scenario)
 # curr_stage: current stage in "curriculum"
-# scenario: name (without file extension) of scenario file
+# scenario: name (WITH file extension) of scenario file
 # max_steps_per_episode: maximum number of steps to record. Script will save episodes if maximum number of steps is reached!
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                                'configs', 'default_settings.yaml'), "model": os.path.join(arena_local_planner_drl_folder_path, 'agents', 'rule_04'),
-                               "scenario": os.path.join(models_folder_path, 'scenarios', args.scenario, '.json'),
+                               "scenario": os.path.join(models_folder_path, 'scenarios', args.scenario),
                                "curriculum": os.path.join(arena_local_planner_drl_folder_path, 'configs', 'training_curriculum_map1small.yaml')},
                                reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=5000,
                                task_mode=task_mode,
@@ -162,9 +162,7 @@ while(True):
             episode_dones = []
             episode_infos = []
             
-            clear_costmaps()
             env.reset()
-            clear_costmaps()
             select_action()
         else:
             # done but not crashed - ran out of timesteps or at the goal
@@ -183,9 +181,7 @@ while(True):
             # try resetting the environment: this will either reset the obstacles and robot and start another episode for recording
             # or it will end the recording because all scenarios have been run their maximum number of times
             try:
-                clear_costmaps()
                 env.reset()
-                clear_costmaps()
                 select_action()
             except Exception as e:
                 print(e)
