@@ -43,30 +43,33 @@ ns = ''
 
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('-m', '--map_name', type=str, help='name of the map being recorded on', required=True, default="map_small")
-parser.add_argument('-s', '--scenario', type=str, metavar="[scenario name]", default='/home/michael/catkin_ws/src/arena-rosnav/simulator_setup/scenarios/eval/obstacle_map1_obs20.json', help='path of scenario json file for deployment')
+parser.add_argument('-scenario', '--scenario', type=str, metavar="[scenario name]", default='', help='name of the scenario json file in /simulator_setup/scenarios')
 parser.add_argument('-stage', '--stage', type=int, metavar="[current stage]", default=1, help='stage to start the simulation with')
 args = parser.parse_args()
 
-#task = get_predefined_task(ns, mode="scenario", PATHS={"model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00", "scenario": args.scenario})  # json scenario
-#task = get_predefined_task(mode="random", PATHS={"scenerios_json_path": args.scenario})  # random scenario
-#task = get_predefined_task(ns, mode="staged", start_stage = 1, PATHS={"scenerios_json_path": args.scenario, "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"})  # staged scenarios
-#task = get_predefined_task(ns, mode="staged", start_stage = 1, PATHS={"model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00", "scenerios_json_path": args.scenario, "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"})  # staged scenarios
-#last one is the last used one
+if args.scenario != '':
+    task_mode = 'scenario'
+else:
+    task_mode = 'staged'
 
 models_folder_path = rospkg.RosPack().get_path('simulator_setup')
 arena_local_planner_drl_folder_path = rospkg.RosPack().get_path(
     'arena_local_planner_drl')
 
-# set curr_stage=1 to select which stage is played during recording
+# relevant parameters:
+# task_mode (staged for random scenarios, scenario for a predefined scenario)
+# curr_stage: current stage in "curriculum"
+# scenario: name (without file extension) of scenario file
+# max_steps_per_episode: maximum number of steps to record. Script will save episodes if maximum number of steps is reached!
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
-                               'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_04",
-                               "scenerios_json_path": args.scenario,
-                               "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
-                               reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=600,
+                               'configs', 'default_settings.yaml'), "model": os.path.join(arena_local_planner_drl_folder_path, 'agents', 'rule_04'),
+                               "scenario": os.path.join(models_folder_path, 'scenarios', args.scenario, '.json'),
+                               "curriculum": os.path.join(arena_local_planner_drl_folder_path, 'configs', 'training_curriculum_map1small.yaml')},
+                               reward_fnc="rule_04", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=5000,
+                               task_mode=task_mode,
                                safe_dist=None, curr_stage=args.stage,
                                move_base_simple=False
                   )  # must set a reward_fnc for the reward calculator, it will return if the episode is done and why
-                  #TODO think about switch between random and scenario task
 
 print(f"env: {env}")
 
@@ -151,19 +154,14 @@ while(True):
         if info['done_reason'] == 1:
             # if the episode is done because the robot collided with an obstacle, ignore this episode
             # reset episode lists to empty lists
-            # #reduce repeat count by 1 and start again
             print('collision')
-            #task._num_repeats_curr_scene -= 1
-            #env.task._num_repeats_curr_scene -= 1  #TODO check me! I think this only exists for ScenarioTasks! May not be relevant with new file structure anyway (1 file per path)
-            #time.sleep(1.0)
             
             episode_observations = []
             episode_actions = []
             episode_rewards = []
             episode_dones = []
             episode_infos = []
-
-            #env.task.next_stage(False)
+            
             clear_costmaps()
             env.reset()
             clear_costmaps()
@@ -185,7 +183,6 @@ while(True):
             # try resetting the environment: this will either reset the obstacles and robot and start another episode for recording
             # or it will end the recording because all scenarios have been run their maximum number of times
             try:
-                #env.task.next_stage(False)
                 clear_costmaps()
                 env.reset()
                 clear_costmaps()
