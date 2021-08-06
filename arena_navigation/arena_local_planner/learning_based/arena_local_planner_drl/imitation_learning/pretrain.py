@@ -26,6 +26,9 @@ to learn a mapping from observations to actions. N.B. the value network is NOT t
 The dataset is assumed be supplied in the format of a MapDataset. See arena_navigation.arena_local_planner.learning_based.arena_local_planner_drl.imitation_learning.dataset
 and arena_navigation.arena_local_planner.learning_based.arena_local_planner_drl.imitation_learning.human_expert
 The inputs are the observations defined in the ObservationSpace used in FlatlandGymEnv, the targets are the actions.
+The MapDataset is first split into a 70%/30% train/test split. Then the episodes in each subset are concatenated
+into a single train set and a single test set. Two dataloaders sample mini-batches from the train and test sets.
+At the end of each episode, the sets are reshuffled.
 
 N.B. the data is assumed to NOT BE NORMALIZED.
 
