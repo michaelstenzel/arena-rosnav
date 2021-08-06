@@ -14,9 +14,9 @@ ns = ''
 
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                             'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
-                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum.yaml"},
+                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
                             reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
-                            safe_dist=None, goal_radius=0.25, curr_stage=2,
+                            safe_dist=None, goal_radius=0.25, curr_stage=4,
                             move_base_simple=False
                 )
 
@@ -84,9 +84,12 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-24_5_epochs_15_batchsize_1.0_lr', env)
 
 # try running converted 5 epoch agent:
-ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_human.zip', env)
+#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_human.zip', env)
 # try converted baseline 5 epoch agent:
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/baseline_ppo_human.zip', env)
+
+# try running best_model with 80% success rate in stage 5, having passed stage 4 already:
+#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/best_model.zip', env)
 
 # human expert 57k timesteps - iterating over entire dataset, CNN agent 18 - 4 epochs
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-54_4_epochs_15_batchsize_1.0_lr', env)
@@ -98,7 +101,7 @@ ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/pretrained_ppo_human_expert/best_model.zip', env)
 
 # fully DRL trained CNN agent 18 from repo - doesn't work at all?
-#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/AGENT_18_2021_04_11__13_54/best_model.zip', env)
+ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/AGENT_18_2021_04_11__13_54/best_model.zip', env)
 
 steps = 50000
 obs = env.reset()
