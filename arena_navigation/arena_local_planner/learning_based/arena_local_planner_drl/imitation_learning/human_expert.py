@@ -12,15 +12,8 @@ import getch
 
 
 #TODO docstring
-""" record_rollouts.py
+""" human_expert.py
 """
-
-def clear_costmaps():
-        bashCommand = "rosservice call /move_base/clear_costmaps"
-        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        #self._service_clear_client()
-        return output, error
 
 def save_episode(observations, actions, rewards, dones, infos):
     # save observations and actions in an npz file:
