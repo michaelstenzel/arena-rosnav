@@ -2,12 +2,6 @@ import numpy as np
 import os
 from torch.utils.data.dataset import Dataset
 
-#TODO docstring
-# get the observations and actions from the recordings
-# each folder contains files with recordings generated in that map
-# each file corresponds to one episode/path
-# each file contains a two arrays: observations and actions
-# the index of each array is the timestep in that episode
 
 class EpisodeDataset(Dataset):
     """ EpisodeDataset
@@ -31,10 +25,15 @@ class EpisodeDataset(Dataset):
         return len(self.actions)
 
 class MapDataset(Dataset):
-    #TODO docstring
     """ MapDataset
-    A MapDataset provides access to all episodes recorded in a given map
-    self.map_dataset is a list of EpisodeDataset objects
+    A MapDataset provides access to all episodes recorded on a given map.
+    The constructor traverses all subfolders of absolute_path_to_folder (the root directory) and adds all
+    files to the MapDataset. They are assumed to all be npz files.
+
+    self.map_dataset is a list of EpisodeDataset objects.
+    
+    Args:
+        absolute_path_to_folder (str): absolute path to the root folder of the dataset
     """
     def __init__(self, absolute_path_to_folder):
         # grab all files in path_to_folder  #TODO this grabs ALL files - change this to only grab npz files
