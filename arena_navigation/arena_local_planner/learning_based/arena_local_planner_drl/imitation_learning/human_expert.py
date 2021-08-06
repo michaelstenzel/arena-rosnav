@@ -2,10 +2,8 @@ import argparse
 from datetime import datetime
 import os
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
-import rospy
 import rospkg
 import numpy as np
-import subprocess
 from pathlib import Path
 
 import getch
