@@ -20,24 +20,43 @@ from tensorboardX import SummaryWriter
 pretrain.py
 
 Trains an agent using supervised learning. The agent is either an existing one, or a randomly initialized AGENT18.
-Mean-squared error is used as 
+Once initialized, the policy network is extracted from the agent and trained on a series of rollouts (i.e. (observation, action)-pairs)
+to learn a mapping from observations to actions. N.B. the value network is NOT trained.
+
+The dataset is assumed be supplied in the format of a MapDataset. See arena_navigation.arena_local_planner.learning_based.arena_local_planner_drl.imitation_learning.dataset
+and arena_navigation.arena_local_planner.learning_based.arena_local_planner_drl.imitation_learning.human_expert
+The inputs are the observations defined in the ObservationSpace used in FlatlandGymEnv, the targets are the actions.
+
+N.B. the data is assumed to NOT BE NORMALIZED.
+
+Mean-squared error is used as the loss function.
+Adadelta is used as the optimizer. It uses an adaptive learning rate with a default value of 1.0.
+
+To avoid overfitting, it is recommended to perform early stopping: tune the number of epochs such that training stops when the test loss for the current epoch
+starts rising while the training loss for the current epoch keeps falling.
+#TODO incorporate early stopping function. See e.g. PyTorch Lightning https://pytorch-lightning.readthedocs.io/en/stable/common/early_stopping.html
+    (requires restructuring model code for extracted policy network into PyTorch Lightning format - may be simpler to implement early stopping from scratch
+    in the training loop below)
 
 Args:
-            task (ABSTask): [description]
-            reward_fnc (str): [description]
-            train_mode (bool): bool to differ between train and eval env during training
-            is_action_space_discrete (bool): [description]
-            safe_dist (float, optional): [description]. Defaults to None.
-            goal_radius (float, optional): [description]. Defaults to 0.1.
-            extended_eval (bool): more episode info provided, no reset when crashing
+    num_epochs (int): the number of epochs for which to train. default=5
+    batch_size (int): the number of samples in each mini-batch. default=15
+    learning_rate (float): initial learning rate. default=1.0
+    dataset (str): name of the dataset. Will be used to load the MapDataset in /output/{args.dataset} and in the paths for saving
+        the agents and tensorboard logs. default='human_expert'
+    load (str): default=None
 """
 
 
-def pretrain(agent, map_dataset, num_epochs=5, batch_size=15, gamma=0.7, learning_rate=1.0, dataset='human_expert'):
+def pretrain(agent, map_dataset, num_epochs=5, batch_size=15, learning_rate=1.0, dataset='human_expert'):
+    """
+    given a loaded PPO agent and a MapDataset, perform supervised learning for a given number of epochs.
+    """
+
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
     writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}')
 
-    network = agent.policy # copy network from agent
+    network = agent.policy # copy policy network from agent
     print(f"network: {network}")
     print('beginning training - epoch 0')
 
@@ -140,7 +159,7 @@ if __name__ == '__main__':
     #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
 
     # human expert folder:
-    map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/human_expert')
+    map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/{args.dataset}')
 
     if args.load:
         # load an existing agent to continue training on map_dataset
