@@ -1,16 +1,11 @@
 import os
 import argparse
-import rospy
 import rospkg
 from datetime import datetime
-import time
-
-import numpy as np
 
 import torch as th
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
 from torch.utils.data.dataset import random_split
 
 from stable_baselines3 import PPO
