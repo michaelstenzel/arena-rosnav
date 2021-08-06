@@ -23,6 +23,7 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
 
     network = agent.policy # copy network from agent
     print(f"network: {network}")
+    print('beginning training - epoch 0')
 
     loss_fn = nn.MSELoss() # use mean-squared error loss for regression
     # initialize optimizer
@@ -94,8 +95,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='.')
     parser.add_argument('-e', '--num_epochs', type=int, help='number of training epochs', default=10)
     parser.add_argument('-bs', '--batch_size', type=int, help='path of scenario json file for deployment', default=15)
-    parser.add_argument('-lr', '--learning_rate', type=int, help='initial learning rate', default=1.0)
+    parser.add_argument('-lr', '--learning_rate', type=float, help='initial learning rate', default=1.0)
     parser.add_argument('-ds', '--dataset', type=str, help='string describing the dataset (e.g. "mpc" or "human_expert"). We be used for tensorboard logs and output agent files.', default='human_expert')
+    parser.add_argument('-load', '--load', type=str, help='supply FILENAME AND PATH RELATIVE TO /arena_local_planner_drl of an existing agent file for continued training. in not set, a randomly initialized AGENT18 will be used. e.g. "agents/AGENT_1_2021_04_02__22_03/best_model.zip"', default=None)
     
     args = parser.parse_args()
     
@@ -124,15 +126,21 @@ if __name__ == '__main__':
     # human expert folder:
     map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/human_expert')
 
-    # instantiate agent 18 (CNN)
-    policy_kwargs = policy_kwargs_agent_18
-    ppo_agent = PPO(
-        "CnnPolicy", env, 
-        policy_kwargs = policy_kwargs, verbose = 1
-    )
-    
-    date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    ppo_agent.save(f'baseline_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')  # save untrained agent to use as a baseline
+    if args.load:
+        # load an existing agent to continue training on map_dataset
+        print(f'loading existing agent: {args.load}')
+        ppo_agent = PPO.load(os.path.join(arena_local_planner_drl_folder_path, args.load), env)
+    else:
+        # instantiate AGENT18 (CNN), will have randomly initialized weights
+        print(f'randomly initializing AGENT18')
+        policy_kwargs = policy_kwargs_agent_18
+        ppo_agent = PPO(
+            "CnnPolicy", env, 
+            policy_kwargs = policy_kwargs, verbose = 1
+        )
+        # save the randomly initialized AGENT18 for use as a baseline
+        date_str = datetime.now().strftime('%Y%m%d_%H-%M')
+        ppo_agent.save(f'baseline_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')  # save untrained agent to use as a baseline
 
     # pretrain the PPO agent
     trained_agent = pretrain(ppo_agent, map_dataset, num_epochs=args.num_epochs, batch_size=args.batch_size, learning_rate=args.learning_rate, dataset=args.dataset)
@@ -140,4 +148,4 @@ if __name__ == '__main__':
 
     # save the pretrained PPO agent
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
-    trained_agent.save(f'pretrained_ppo_agent_18_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')
+    trained_agent.save(f'pretrained_ppo_agent_{args.dataset}_{date_str}_{args.num_epochs}_epochs_{args.batch_size}_batchsize')
