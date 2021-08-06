@@ -16,8 +16,24 @@ from dataset import MapDataset
 
 from tensorboardX import SummaryWriter
 
+"""
+pretrain.py
 
-def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learning_rate=1.0, dataset='human_expert'):
+Trains an agent using supervised learning. The agent is either an existing one, or a randomly initialized AGENT18.
+Mean-squared error is used as 
+
+Args:
+            task (ABSTask): [description]
+            reward_fnc (str): [description]
+            train_mode (bool): bool to differ between train and eval env during training
+            is_action_space_discrete (bool): [description]
+            safe_dist (float, optional): [description]. Defaults to None.
+            goal_radius (float, optional): [description]. Defaults to 0.1.
+            extended_eval (bool): more episode info provided, no reset when crashing
+"""
+
+
+def pretrain(agent, map_dataset, num_epochs=5, batch_size=15, gamma=0.7, learning_rate=1.0, dataset='human_expert'):
     date_str = datetime.now().strftime('%Y%m%d_%H-%M')
     writer = SummaryWriter(f'tensorboard_logs/{dataset}/{date_str}')
 
@@ -93,7 +109,7 @@ def pretrain(agent, map_dataset, num_epochs=10, batch_size=15, gamma=0.7, learni
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='.')
-    parser.add_argument('-e', '--num_epochs', type=int, help='number of training epochs', default=10)
+    parser.add_argument('-e', '--num_epochs', type=int, help='number of training epochs', default=5)
     parser.add_argument('-bs', '--batch_size', type=int, help='path of scenario json file for deployment', default=15)
     parser.add_argument('-lr', '--learning_rate', type=float, help='initial learning rate', default=1.0)
     parser.add_argument('-ds', '--dataset', type=str, help='string describing the dataset (e.g. "mpc" or "human_expert"). We be used for tensorboard logs and output agent files.', default='human_expert')
