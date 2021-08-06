@@ -152,13 +152,8 @@ if __name__ == '__main__':
                                safe_dist=None, curr_stage=1,
                                move_base_simple=False
                   )
-
-    # create map dataset
-    #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/map_empty_small')
-    # output folder: MPC
-    #map_dataset = MapDataset('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/output/')
-
-    # human expert folder:
+    
+    # create dataset from episodes stored in /output/{args.dataset}:
     map_dataset = MapDataset(f'{arena_local_planner_drl_folder_path}/imitation_learning/output/{args.dataset}')
 
     if args.load:
