@@ -12,9 +12,21 @@ arena_local_planner_drl_folder_path = rospkg.RosPack().get_path('arena_local_pla
 
 ns = ''
 
+# instantiate random scenarios:
+#env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
+#                            'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
+#                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
+#                            reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
+#                            safe_dist=None, goal_radius=0.25, curr_stage=4,
+#                            move_base_simple=False
+#                )
+
+# instantiate specific scenario from json:
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                             'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
-                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
+                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml",
+                            "scenario": os.path.join(models_folder_path, "scenarios", "blocked_single_corridor.json")},
+                            task_mode="scenario",
                             reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
                             safe_dist=None, goal_radius=0.25, curr_stage=4,
                             move_base_simple=False
@@ -81,7 +93,7 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
 # struggles with dynamic obstacles - can't avoid them if it's being approached by them. Sometimes avoid them if they aren't.
 # Usually avoids static obstacles in the map, but every once in a while it will tunnel into a wall.
 # This one was used for continued DRL:
-#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-24_5_epochs_15_batchsize_1.0_lr', env)
+ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-24_5_epochs_15_batchsize_1.0_lr', env)
 
 # try running converted 5 epoch agent:
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_human.zip', env)
@@ -100,8 +112,8 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
 # sanity check:
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/pretrained_ppo_human_expert/best_model.zip', env)
 
-# fully DRL trained CNN agent 18 from repo - doesn't work at all?
-ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/AGENT_18_2021_04_11__13_54/best_model.zip', env)
+# fully DRL trained CNN agent 18 from repo - needs observations to be NORMALIZED!
+#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/AGENT_18_2021_04_11__13_54/best_model.zip', env)
 
 steps = 50000
 obs = env.reset()
