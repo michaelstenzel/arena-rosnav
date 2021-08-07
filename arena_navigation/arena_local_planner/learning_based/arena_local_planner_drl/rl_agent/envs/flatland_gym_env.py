@@ -52,6 +52,8 @@ class FlatlandEnv(gym.Env):
             safe_dist (float, optional): [description]. Defaults to None.
             goal_radius (float, optional): [description]. Defaults to 0.1.
             extended_eval (bool): more episode info provided, no reset when crashing
+            move_base_simple (bool): set True to use move_base_simple/goal (e.g. for MPC), False to use subgoal, 
+                in the ObservationCollector and Task. Defaults to False.
         """
         super(FlatlandEnv, self).__init__()
 
