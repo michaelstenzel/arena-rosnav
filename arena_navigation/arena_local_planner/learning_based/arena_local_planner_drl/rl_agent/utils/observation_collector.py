@@ -159,33 +159,36 @@ class ObservationCollector():
         return merged_obs, obs_dict
     
     def get_observations_and_action(self):
-        # Get synchronized observations and return them along with the current command velocity (action).
+        """
+        Get synchronized observations and return them along with the current command velocity (action).
+        First a set of synchronized laser_scan and robot_pose messages are retrieved using get_observations(),
+        then it is checked whether the current cmd_vel message is in sync with those messages.
+        Since cmd_vel is published less frequently, only the first element of the cmd_vel deque is considered.
+
+        Returns:
+            merged_obs (np.array): array with laser_scan and goal_in_robot_frame
+            obs_dict (dict): dictionary with laser_scan, goal_in_robot_frame, global_plan, robot_pose
+            action (None or np.array): if no synchronized set of action (cmd_vel), robot_pose and laser_scan
+                could be found, return None. Else: return array of cmd_vel components
+        """
         merged_obs, obs_dict = self.get_observations()
-        #print(f"get_obs_and_action | len(_cmd_vel_deque): {len(self._cmd_vel_deque)}")
-        # N.B. cmd_vel messages are published much less frequently than laser scan and robot state
+        # N.B. cmd_vel messages are published much less frequently than laser scan and robot pose
         # -> deque has at most 1 element in it, this is why only the first element in the deque is considered for synchronization
         if len(self._cmd_vel_deque) > 0:
-            #print("_cmd_vel_deque.popleft()!")
             cmd_vel_msg, clock_value = self._cmd_vel_deque.popleft()
             if not isinstance(clock_value, float):
                 clock_value = clock_value.clock.to_sec()
             
-            #print(f"clock_value - self._time_of_synched_rs   = {clock_value - self._time_of_synched_rs}")
-            #print(f"clock_value - self._time_of_synched_scan = {clock_value - self._time_of_synched_scan}")
             if abs(clock_value - self._time_of_synched_rs) > 0.05 or abs(clock_value - self._time_of_synched_scan) > 0.05:
-                #print('-----------------------------------')
-                #print(f"cmd_vel&rs   not synced! {abs(clock_value - self._time_of_synched_rs)}")
-                #print(f"cmd_vel&scan not synced! {abs(clock_value - self._time_of_synched_scan)}")
+                # deque not empty, but action is out of sync with either the laser scan or robot pose
                 action = None
             else:
-                #print('--------------------')
-                #print('synced action found!')
+                #synced observations and action found
                 action = self.process_cmd_vel_msg(cmd_vel_msg)
         else:
+            # deque is empty, no synced observations and action could be found
             action = None
-            #print("deque is empty!")
-            #print('---------------------')
-        
+                
         return merged_obs, obs_dict, action
 
     @staticmethod
@@ -277,11 +280,11 @@ class ObservationCollector():
         self._rs_deque.append(msg_robotstate)
     
     def callback_cmd_vel(self, msg_cmd_vel):
+        # approximate timestamp of cmd_vel message using current reading from global clock
         time_received = self._clock
         if len(self._cmd_vel_deque) == self.max_deque_size:
             self._cmd_vel_deque.popleft()
         self._cmd_vel_deque.append((msg_cmd_vel, time_received))
-        #self._cmd_vel = msg_cmd_vel  #TODO only temporarily for debugging purposes
 
     def callback_observation_received(self, msg_LaserScan, msg_RobotStateStamped):
         # process sensor msg
