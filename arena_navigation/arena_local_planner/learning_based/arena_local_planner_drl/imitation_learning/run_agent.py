@@ -2,9 +2,21 @@ import os
 import rospkg
 import time
 
+import argparse
+
 from stable_baselines3 import PPO
 
 from rl_agent.envs.flatland_gym_env import FlatlandEnv
+
+parser = argparse.ArgumentParser(description='.')
+parser.add_argument('-scenario', '--scenario', type=str, help='name of scenario file. If not set, random tasks will be generated.', default="")
+parser.add_argument('-stage', '--stage', type=int, metavar="[current stage]", default=1, help='stage to start the simulation with')
+args = parser.parse_args()
+
+if args.scenario != '':
+    task_mode = 'scenario'
+else:
+    task_mode = 'staged'
 
 # create map dataset(s)
 models_folder_path = rospkg.RosPack().get_path('simulator_setup')
@@ -12,23 +24,14 @@ arena_local_planner_drl_folder_path = rospkg.RosPack().get_path('arena_local_pla
 
 ns = ''
 
-# instantiate random scenarios:
-#env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
-#                            'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
-#                            "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml"},
-#                            reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
-#                            safe_dist=None, goal_radius=0.25, curr_stage=4,
-#                            move_base_simple=False
-#                )
-
-# instantiate specific scenario from json:
+# instantiate random scenario or scenario from a scenario file:
 env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path, 'robot', 'myrobot.model.yaml'), 'robot_as': os.path.join(arena_local_planner_drl_folder_path,
                             'configs', 'default_settings.yaml'), "model": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/agents/rule_00",
                             "curriculum": "/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/configs/training_curriculum_map1small.yaml",
-                            "scenario": os.path.join(models_folder_path, "scenarios", "blocked_single_corridor.json")},
-                            task_mode="scenario",
+                            "scenario": os.path.join(models_folder_path, "scenarios", args.scenario)},
+                            task_mode=task_mode,
                             reward_fnc="rule_00", is_action_space_discrete=False, debug=False, train_mode=True, max_steps_per_episode=650,
-                            safe_dist=None, goal_radius=0.25, curr_stage=4,
+                            safe_dist=None, goal_radius=0.25, curr_stage=args.stage,
                             move_base_simple=False
                 )
 
@@ -102,6 +105,9 @@ ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/
 
 # try running best_model with 80% success rate in stage 5, having passed stage 4 already:
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/best_model.zip', env)
+
+# try running best_model_aug_8_stage_4, reached 85% success rate in stage 5? Hparams says stage 4 though...
+#ppo_agent = PPO.load('best_model_aug_8_stage_4.zip', env)
 
 # human expert 57k timesteps - iterating over entire dataset, CNN agent 18 - 4 epochs
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-54_4_epochs_15_batchsize_1.0_lr', env)

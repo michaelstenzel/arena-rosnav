@@ -140,7 +140,11 @@ Option 2: imitation_learning/run_agent.py. Generates random scenarios. Stage set
     `roslaunch arena_bringup start_arena_flatland.launch disable_scenario:="false" map_file:="map_small" local_planner:="mpc" train_mode:="false"`
 
 2. run_agent.py
-    `run_agent.py`
+    `run_agent.py -stage 1 -scenario "blocked_single_corridor.json"`
+
+    `scenario` If not set, random scenarios will be generated.
+
+    `stage` Defaults to 1. Only relevant for random scenarios.
 
     Agent must be set by setting the absolute path to the zip file (e.g. best_model.zip) inline. Can't handle agents trained on normalized data.
 
