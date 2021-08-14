@@ -1,0 +1,60 @@
+{
+    "pedsim_agents": [
+        {
+            "name": "1",
+            "id": 0,
+            "pos": [
+                -0.55,
+                1.09
+            ],
+            "type": "adult",
+            "yaml_file": "/home/michael/catkin_ws/src/arena-rosnav/simulator_setup/dynamic_obstacles/person_single_circle.model.yaml",
+            "number_of_peds": 1,
+            "vmax": 0.30000000000000004,
+            "start_up_mode": "wait_timer",
+            "wait_time": 20.0,
+            "trigger_zone_radius": 0.0,
+            "chatting_probability": 0.0,
+            "tell_story_probability": 0.0,
+            "group_talking_probability": 0.0,
+            "talking_and_walking_probability": 0.0,
+            "requesting_service_probability": 0.0,
+            "requesting_guide_probability": 0.0,
+            "requesting_follower_probability": 0.0,
+            "max_talking_distance": 5,
+            "max_servicing_radius": 5,
+            "talking_base_time": 10,
+            "tell_story_base_time": 0.0,
+            "group_talking_base_time": 10,
+            "talking_and_walking_base_time": 6,
+            "receiving_service_base_time": 20,
+            "requesting_service_base_time": 30,
+            "force_factor_desired": 1,
+            "force_factor_obstacle": 1,
+            "force_factor_social": 5,
+            "force_factor_robot": 0,
+            "waypoints": [
+                [
+                    -1.66,
+                    0.38
+                ],
+                [
+                    -3.57,
+                    -4.48
+                ]
+            ],
+            "waypoint_mode": 0
+        }
+    ],
+    "static_obstacles": [],
+    "robot_position": [
+        -3.23,
+        1.12
+    ],
+    "robot_goal": [
+        8.73,
+        1.06
+    ],
+    "map_path": "/home/michael/catkin_ws/src/arena-rosnav/simulator_setup/maps/map_small_corridor/map.yaml",
+    "format": "arena-tools"
+}
