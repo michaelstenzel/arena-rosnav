@@ -96,7 +96,7 @@ env = FlatlandEnv(ns=ns, PATHS={'robot_setting': os.path.join(models_folder_path
 # struggles with dynamic obstacles - can't avoid them if it's being approached by them. Sometimes avoid them if they aren't.
 # Usually avoids static obstacles in the map, but every once in a while it will tunnel into a wall.
 # This one was used for continued DRL:
-ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-24_5_epochs_15_batchsize_1.0_lr', env)
+#ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-24_5_epochs_15_batchsize_1.0_lr', env)
 
 # try running converted 5 epoch agent:
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_human.zip', env)
@@ -108,6 +108,12 @@ ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/
 
 # try running best_model_aug_8_stage_4, reached 85% success rate in stage 5? Hparams says stage 4 though...
 #ppo_agent = PPO.load('best_model_aug_8_stage_4.zip', env)
+
+# try running best_model_august_9
+#ppo_agent = PPO.load('best_model_august_9.zip', env)
+
+# try running best_model.zip from server human_pretrained DRL run:
+ppo_agent = PPO.load(os.path.join(arena_local_planner_drl_folder_path, 'agents', 'pretrained_ppo_human', 'best_model.zip'), env)
 
 # human expert 57k timesteps - iterating over entire dataset, CNN agent 18 - 4 epochs
 #ppo_agent = PPO.load('/home/michael/catkin_ws/src/arena-rosnav/arena_navigation/arena_local_planner/learning_based/arena_local_planner_drl/imitation_learning/pretrained_ppo_agent_18_human_expert_20210730_19-54_4_epochs_15_batchsize_1.0_lr', env)
