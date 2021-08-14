@@ -70,7 +70,7 @@ Recording **scenarios specified in a scenario.json file**:
 
     `map_file`: name of the map in which the scenario takes place/which was used when designing the scenario with the GUI
 
-2. pretrain.py
+2. human_expert.py
     `python human_expert.py -m "blocked_single_corridor" -scenario "blocked_single_corridor.json"`
 
     `scenario`: the same scenario file as above
@@ -126,10 +126,15 @@ Script for doing behavior cloning (supervised learning) on rollouts (recorded ob
 
 Option 1: arena-rosnav's run_agent.py (in scripts/deployment). Runs agent in specified scenario file. Can handle agents which were trained on normalized observations.
 1. roslaunch
+
     `roslaunch arena_bringup start_arena_flatland.launch map_file:="map1"  disable_scenario:="false" scenario_file:="eval/obstacle_map1_obs20.json"`
 
 2. run_agent.py
-    `python run_agent.py --load AGENT_20_2021_04_17__03_50 --scenario eval/obstacle_map1_obs20`
+    ```
+    roscd arena_local_planner_drl
+    cd scripts/deployment/
+    python run_agent.py --load AGENT_20_2021_04_17__03_50 --scenario eval/obstacle_map1_obs20
+    ```
 
     `load`: name of agent in `/agents`
 
@@ -140,7 +145,7 @@ Option 2: imitation_learning/run_agent.py. Generates random scenarios. Stage set
     `roslaunch arena_bringup start_arena_flatland.launch disable_scenario:="false" map_file:="map_small" local_planner:="mpc" train_mode:="false"`
 
 2. run_agent.py
-    `run_agent.py -stage 1 -scenario "blocked_single_corridor.json"`
+    `python run_agent.py -stage 1 -scenario "blocked_single_corridor.json"`
 
     `scenario` If not set, random scenarios will be generated.
 
