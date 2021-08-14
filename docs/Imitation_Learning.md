@@ -62,7 +62,7 @@ Recording **randomly generated scenarios**:
 Recording **scenarios specified in a scenario.json file**:
 
 1. roslaunch
-    `roslaunch arena_bringup start_arena_flatland.launch disable_scenario:=false scenario_file:=blocked_single_corridor.json enable_pedsim:=true map_file:="map_small" train_mode:="true"`
+    `roslaunch arena_bringup start_arena_flatland.launch disable_scenario:=false scenario_file:=blocked_single_corridor_custom_map.json enable_pedsim:=true map_file:="map_small_corridor" train_mode:="true"`
 
     N.B. `enable_pedsim:=true`
     
@@ -71,7 +71,7 @@ Recording **scenarios specified in a scenario.json file**:
     `map_file`: name of the map in which the scenario takes place/which was used when designing the scenario with the GUI
 
 2. human_expert.py
-    `python human_expert.py -m "blocked_single_corridor" -scenario "blocked_single_corridor.json"`
+    `python human_expert.py -m "blocked_single_corridor" -scenario "blocked_single_corridor_custom_map.json"`
 
     `scenario`: the same scenario file as above
 
@@ -155,7 +155,7 @@ Option 2: imitation_learning/run_agent.py. Generates random scenarios. Stage set
 
 When running a specific scenario generated using the GUI, use this command instead (needs pedsim to be enabled):
     
-    `roslaunch arena_bringup start_arena_flatland.launch disable_scenario:=false scenario_file:=blocked_single_corridor_custom_map.json enable_pedsim:=true map_file:="map_small_corridor" train_mode:="true"`
+    roslaunch arena_bringup start_arena_flatland.launch disable_scenario:=false scenario_file:=blocked_single_corridor_custom_map.json enable_pedsim:=true map_file:="map_small_corridor" train_mode:="true"
 
 ## DRL Training
 
