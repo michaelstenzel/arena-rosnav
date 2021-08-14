@@ -5,14 +5,14 @@
             "id": 0,
             "pos": [
                 -0.39,
-                1.07
+                1.06
             ],
             "type": "adult",
             "yaml_file": "/home/michael/catkin_ws/src/arena-rosnav/simulator_setup/dynamic_obstacles/person_single_circle.model.yaml",
             "number_of_peds": 1,
             "vmax": 0.30000000000000004,
             "start_up_mode": "wait_timer",
-            "wait_time": 90.0,
+            "wait_time": 20.0,
             "trigger_zone_radius": 0.0,
             "chatting_probability": 0.01,
             "tell_story_probability": 0.0,
@@ -35,11 +35,15 @@
             "force_factor_robot": 0,
             "waypoints": [
                 [
-                    -3.17,
-                    -0.43
+                    -1.63,
+                    0.53
+                ],
+                [
+                    -3.13,
+                    -4.42
                 ]
             ],
-            "waypoint_mode": 1
+            "waypoint_mode": 0
         }
     ],
     "static_obstacles": [
@@ -99,8 +103,8 @@
         }
     ],
     "robot_position": [
-        -3.4,
-        5.59
+        -3.22,
+        1.09
     ],
     "robot_goal": [
         9.28,
