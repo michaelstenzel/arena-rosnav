@@ -117,9 +117,11 @@ Script for doing behavior cloning (supervised learning) on rollouts (recorded ob
 
 2. pretrain.py
 
-    `python pretrain.py --load agents/AGENT_1_2021_04_02__22_03/best_model.zip`
+    `python pretrain.py -e 1 -ds 'blocked_single_corridor_stage_1' --load agents/baseline_ppo_human/best_model.zip`
 
     `load` Flag: path of model *zip* file relative to `/arena_local_planner_drl`
+    `e` number of training episodes: for fine-tuning it makes sense to choose a smaller number of epochs
+    `ds` the dataset folder. Since the pretraining script will look for the dataset folder in `/output` and iteratively walk all subfolders, adding all files to the MapDataset, it's currently necessary to make sure that the fine-tuning dataset is in `/output/<dataset>` rather than `/output/human_expert/<dataset>`
 
 
 ## Running a pretrained agent
