@@ -126,7 +126,7 @@ Script for doing behavior cloning (supervised learning) on rollouts (recorded ob
 
 ## Running a pretrained agent
 
-Option 1: arena-rosnav's run_agent.py (in scripts/deployment). Runs agent in specified scenario file. Can handle agents which were trained on normalized observations.
+Option 1: arena-rosnav's run_agent.py (in scripts/deployment). Runs agent in specified scenario file. Can handle agents which were trained on normalized observations. Can run agents stored in `/agents`. N.B. the agent file must be named `best_model.zip`. A list of agents produced during this project can be found at the bottom of this document.
 1. roslaunch
 
     `roslaunch arena_bringup start_arena_flatland.launch map_file:="map1"  disable_scenario:="false" scenario_file:="eval/obstacle_map1_obs20.json"`
@@ -230,3 +230,22 @@ Training script will be terminated
 Please make a note of this time taken.
 
 The simulation will not terminate automatically, so it needs to be stopped with CTRL-C.
+
+## List of agents
+These agents were produced and evaluated during this project:
+
+Human expert:
+1. baseline_ppo_human
+- randomly initialized agent with AGENT18 architecture, trained with DRL
+2. pretrained_ppo_human_before_drl
+- agent with AGENT18 architecture, pretrained on human expert data (random scenarios)
+3. pretrained_ppo_human
+- agent with AGENT18 architecture, pretrained on human expert data (random scenarios), followed by DRL
+4. finetuned_ppo_blocked_corridor
+- randomly initialized agent with AGENT18 architecture, trained with DRL, fine-tuned on human expert data recorded in the blocked corridor map and scenario
+
+MPC:
+1. pretrained_ppo_baseline
+- randomly initialized agent with default stable-baselines3 MLP PPO architecture
+2. pretrained_ppo_mpc
+- default stable-baselines3 MLP PPO architecture pretrained on MPC data
